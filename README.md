@@ -6,7 +6,10 @@ More importantly this project's function is to parse for names and times/distanc
 
 
 The program asks for three things before it can automically do it, and they are the 
+
 **URL** of the **meet** _(which has to be in the completed format as of now.)_
+![image](https://github.com/rrojas1819/MilesplitTimeParser/assets/114956999/7f4531e7-76da-48c3-a5b5-a931f9394533)
+
 
 **School name** _(The beginning of the name, EX: Rahway HS => Rahway)_
 
