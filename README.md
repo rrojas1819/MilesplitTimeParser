@@ -1,6 +1,8 @@
 MileSplit Time and Event Parser
 
 Have a working version so far in the InputData branch, however still want to check and fix a few things.
+_**VIDEO EXAMPLE AT THE END!!**_
+
 
 More importantly this project's function is to parse for names and times/distances of athletes and copy them and strucuting them into a table format to then paste into Excel or Google Sheets.
 
@@ -9,6 +11,8 @@ The program asks for three things before it can automically do it, and they are 
 
 **URL** of the **meet** _(which has to be in the completed format as of now.)_
 ![image](https://github.com/rrojas1819/MilesplitTimeParser/assets/114956999/7f4531e7-76da-48c3-a5b5-a931f9394533)
+
+
 
 
 **School name** _(The beginning of the name, EX: Rahway HS => Rahway)_
@@ -22,3 +26,5 @@ Plans as of right now:
 - Need validation and pop up to show if things are incorrect or not found.
 - Eventually redesign the structure of the TrackProgram as while it is functional, it could be shorten greatly as there are many if statements that occur that can be simplified!
 - _Future plan is to be a website version of this application!_
+
+https://github.com/rrojas1819/MilesplitTimeParser/assets/114956999/74b4ca95-d184-43f1-9825-3fe47da61324
