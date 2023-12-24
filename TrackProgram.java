@@ -3,16 +3,34 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-
+import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Clipboard;
+
+
 
 
 class runTrackProgram {
-    public static void main(String[] args) throws IOException {
-        TrackProgram tracker = new TrackProgram("https://nj.milesplit.com/meets/412104-westfield-vs-rahway-2021/results/722112?type=raw","Rahway", false);
+    public static void main(String[] args) throws IOException, InterruptedException {
+
+        CountDownLatch latch = new CountDownLatch(1);
+        InputField input = new InputField(latch);
+        latch.await();
+
+        while(true){
+             new TrackProgram(input);
+
+        }
+
+
+
+        //"https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw","Rahway", false
     }
 //Test case 1:  https://nj.milesplit.com/meets/452060-the-varsity-classic-2023/results/873324?type=raw                                                Passed        initial (by commas)
 //Test case 2:  https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw          Passed        \t
@@ -43,11 +61,11 @@ class runTrackProgram {
 //Test case 27:
 //Test case 28:
 //Test case 29:
-//Test case 30: 
+//Test case 30:
 }
 
 
-public class TrackProgram {
+public class TrackProgram extends JFrame {
     private String school;
     private Document doc;
     private Element meetResultsBody;
@@ -58,15 +76,17 @@ public class TrackProgram {
     private String resultLineNP;
 
 
-    public TrackProgram(String URL, String schoolname, boolean comma) throws IOException {
+
+    public TrackProgram(InputField input) throws IOException  {
 
 
-        school = schoolname;
-        doc = Jsoup.connect(URL).get();
+
+        school = input.getSchoolName();
+        doc = Jsoup.connect(input.getAddress()).get();
         meetResultsBody = doc.getElementById("meetResultsBody");
         results = meetResultsBody.getElementsByTag("pre");
         schoolAthletes = new ArrayList<>();
-        commaBool = comma;
+        commaBool = input.getBoolComma();
         if(results.size() > 1) {
             results = new Elements(results.last());
         }
@@ -80,7 +100,7 @@ public class TrackProgram {
 
     }
 
-    private void timeStrip() {  // 33-3 Doesn't work as a event or time
+    private void timeStrip() {
         for(Athlete ath : schoolAthletes){
             int timeCounter = 0;
             if (ath.getResultLine().contains("  ")) {
@@ -150,6 +170,7 @@ public class TrackProgram {
 
 
         int tempvar = 0;
+        String tempString = "";
         for (Athlete a : schoolAthletes) {
             try {
                 a.checkTimeVar();
@@ -158,9 +179,16 @@ public class TrackProgram {
             }
 
 
-            System.out.println(a + "Index " + tempvar);
+            tempString = tempString + a;
             tempvar += 1;
         }
+
+        StringSelection stringSelection = new StringSelection(tempString);
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(stringSelection, null);
+
+        //JLabel atheteString = new JLabel(tempString);
+
 
     }
 
@@ -201,7 +229,7 @@ public class TrackProgram {
                     }
 
 
-                    System.out.println(resultLineNP + "LINE" + schoolAthleteCount);
+
 
 
 
