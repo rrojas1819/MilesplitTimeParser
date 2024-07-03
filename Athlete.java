@@ -1,16 +1,6 @@
 public class Athlete {
-    private String name;
-    private String[] events;
-
-    private String fieldEventVar;
-
-    private String time;
-
-    private String event;
-    private String[] timeArray;
-    private String resultLine;
-
-
+    private String name,fieldEventVar,time,event,resultLine;
+    private String[] events,timeArray;
 
     public Athlete(String rawName, String[] Ev, String Time, Boolean reverseChoice){
         name = rawName;

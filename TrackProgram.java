@@ -1,13 +1,12 @@
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
+import org.jsoup.    select.Elements;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.datatransfer.StringSelection;
@@ -15,23 +14,20 @@ import java.awt.datatransfer.Clipboard;
 
 
 
-
 class runTrackProgram {
-    public static void main(String[] args) throws IOException, InterruptedException {
-
-        CountDownLatch latch = new CountDownLatch(1);
-        InputField input = new InputField(latch);
-        latch.await();
-
-        while(true){
-             new TrackProgram(input);
-
-        }
+    public static void main(String[] args) throws IOException {
+        new InputField();
 
 
 
-        //"https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw","Rahway", false
+
+
+
+
+
     }
+    //"https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw","Rahway", false\
+
 //Test case 1:  https://nj.milesplit.com/meets/452060-the-varsity-classic-2023/results/873324?type=raw                                                Passed        initial (by commas)
 //Test case 2:  https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw          Passed        \t
 //Test case 3:  https://nj.milesplit.com/meets/511411-njsiaa-sectional-championships-north-2-group-2and3-2023/results/873249?type=raw                 Passed         No commas
@@ -66,20 +62,20 @@ class runTrackProgram {
 
 
 public class TrackProgram extends JFrame {
-    private String school;
+    private String school,resultLineNP;
     private Document doc;
     private Element meetResultsBody;
     private Elements results;
+    private HashMap<String,Athlete> athleteMap = new LinkedHashMap<>();
+    private static ArrayList<HashMap<String,Athlete>> hashMapArrayList = new ArrayList<>();
     private ArrayList<Athlete> schoolAthletes;
-    private int countSchoolInstance = 0;
+    //countSchool is for testing purposes, no real application.
     private boolean commaBool;
-    private String resultLineNP;
-
+    private static final String[]  KeyWords = {"ND", "DNF", "FOUL","NH", "DNS" , "DQ"}, states = {"AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"};
+    public boolean test;
 
 
     public TrackProgram(InputField input) throws IOException  {
-
-
 
         school = input.getSchoolName();
         doc = Jsoup.connect(input.getAddress()).get();
@@ -90,17 +86,31 @@ public class TrackProgram extends JFrame {
         if(results.size() > 1) {
             results = new Elements(results.last());
         }
-        nameStrip();
-        timeStrip();
-
-
-
-
 
 
     }
 
-    private void timeStrip() {
+
+
+    public ArrayList<HashMap<String,Athlete>> getHashMapArrayList(){
+            return hashMapArrayList;
+    }
+
+
+
+    public static boolean returnSpecificState(String address){
+        address = address.toUpperCase();
+        for(String s : states ){
+            if(address.matches(s)){
+                return true;
+            }
+
+        }
+        return false;
+    }
+
+    public void timeStrip() {
+
         for(Athlete ath : schoolAthletes){
             int timeCounter = 0;
             if (ath.getResultLine().contains("  ")) {
@@ -187,224 +197,110 @@ public class TrackProgram extends JFrame {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
 
+
+
+        hashMapArrayList.add(athleteMap);
+
+        //System.out.println(hashMapArrayList.size());
+        //queue.add(athleteMap);
         //JLabel atheteString = new JLabel(tempString);
 
 
     }
 
 
-    private void nameStrip() {
-        String[] result_Stripped;
-
-        if(results.text().contains("\r")){
-            result_Stripped = results.text().split("\r"); //splits the doc into full lines
-        } else {
-            result_Stripped = results.text().split("\n"); //splits the doc into full lines
-        }
-
-
+    public void startNameStrip() {
+        String[] result_Stripped = stripResultFromBodyText();
         int schoolAthleteCount = 0;
-
 
         if (SchoolListCheck()) { //Checks if the school is in the doc
             for (String resultLine : result_Stripped) {  //checks each line in the array of school lines
-
                 if (resultLine.contains(school)) {
-                    countSchoolInstance += 1;
-
-                    if(resultLine.matches("^(\\W+?|\\d+?)?.*")){
-
-                        Pattern pattern = Pattern.compile("([a-zA-Z]).*");
-                        Matcher matcher = pattern.matcher(resultLine);
-
-                        if(matcher.find()) {
-                            String toBeCut = matcher.group(1);
-
-
-                            resultLineNP = resultLine.substring(resultLine.indexOf(toBeCut));
-
-                        }
-
-
-                    }
-
-
-
-
-
+                    //countSchoolInstance += 1;
+                    PatternChecker(resultLine);
 
                     if (resultLineNP.contains("  ") && commaBool) {
                         for (String splitResultLine : resultLineNP.split("  ")) {
                             splitResultLine = splitResultLine.strip();
-
-                            if ((!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && resultLine.contains(",") && !splitResultLine.contains(school)) || (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && resultLine.contains(",") && !splitResultLine.contains(school))) {
+                            boolean state = (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && !splitResultLine.contains(school)) || (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && !splitResultLine.contains(school));
+                            if (state && resultLine.contains(",")) {
                                 //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
+                                boolean quickCheck = false;
 
-
-                                if (splitResultLine.contains("ND")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("ND");
-                                    schoolAthleteCount += 1;
-                                    continue;
-
-
+                                for(String i : KeyWords){
+                                    if(splitResultLine.contains(i)){
+                                        schoolAthleteCount -= 1;
+                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
+                                        schoolAthleteCount += 1;
+                                        quickCheck = true;
+                                    }
                                 }
-
-
-                                if (splitResultLine.contains("FOUL")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("FOUL");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNS")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNS");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("NH")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("NH");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNF")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNF");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DQ")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DQ");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-
-
-                                schoolAthletes.add(new Athlete(splitResultLine, true));
-                                schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
-                                schoolAthleteCount += 1;
-
-
-                            }
-
-
-                        }
-                    } else if (resultLineNP.contains("  ") && !commaBool) {
-                        for (String splitResultLine : resultLineNP.split("  ")) {
-                            splitResultLine = splitResultLine.strip();
-                            if ((!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && !splitResultLine.contains(school)) || (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && !splitResultLine.contains(school))) {
-                                //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
-
-
-                                if (splitResultLine.contains("ND")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("ND");
-                                    schoolAthleteCount += 1;
-                                    continue;
-
-
-                                }
-
-
-                                if (splitResultLine.contains("FOUL")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("FOUL");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNS")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNS");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("NH")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("NH");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNF")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNF");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DQ")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DQ");
-                                    schoolAthleteCount += 1;
+                                if(quickCheck){
                                     continue;
                                 }
 
 
                                 schoolAthletes.add(new Athlete(splitResultLine, commaBool));
                                 schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
+                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
+                                schoolAthleteCount += 1;
+
+                                continue;
+                            }
+                            if (state) {
+                                //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
+                                boolean quickCheck = false;
+
+                                for(String i : KeyWords){
+                                    if(splitResultLine.contains(i)){
+                                        schoolAthleteCount -= 1;
+                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
+                                        schoolAthleteCount += 1;
+                                        quickCheck = true;
+                                    }
+                                }
+                                if(quickCheck){
+                                    continue;
+                                }
+
+
+                                schoolAthletes.add(new Athlete(splitResultLine, commaBool));
+                                schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
+                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
                                 schoolAthleteCount += 1;
 
 
                             }
 
-
                         }
-                    } else if (resultLineNP.contains("\t") && commaBool) {
-                        if ("\t".equals(String.valueOf(resultLineNP.charAt(0)))) {
-                            resultLineNP = resultLineNP.substring(1);
-                        }
+                    }
+                    else if (resultLineNP.contains("\t") && commaBool) {
+                        tabHelper();
 
                         for (String splitResultLine : resultLineNP.split("\t")) {
                             splitResultLine = splitResultLine.strip();
                             if ((!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") &&!splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && resultLine.contains(",") && !splitResultLine.contains(school)) || ( !splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w")&& !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && resultLine.contains(",") && !splitResultLine.contains(school))) {
                                 //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
 
+                                boolean quickCheck = false;
 
-                                if (splitResultLine.contains("ND")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("ND");
-                                    schoolAthleteCount += 1;
+                                for(String i : KeyWords){
+                                    if(splitResultLine.contains(i)){
+                                        schoolAthleteCount -= 1;
+                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
+                                        schoolAthleteCount += 1;
+                                        quickCheck = true;
+                                    }
+                                }
+                                if(quickCheck){
                                     continue;
+                                }
 
-
-                                }
-
-
-                                if (splitResultLine.contains("FOUL")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("FOUL");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNS")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNS");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("NH")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("NH");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNF")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNF");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DQ")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DQ");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
 
 
                                 schoolAthletes.add(new Athlete(splitResultLine, true));
                                 schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
+                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
                                 schoolAthleteCount += 1;
 
 
@@ -414,58 +310,33 @@ public class TrackProgram extends JFrame {
                         }
 
 
-                    } else if (resultLineNP.contains("\t") && !commaBool) {
-                        if ("\t".equals(String.valueOf(resultLineNP.charAt(0)))) {
-                            resultLineNP = resultLineNP.substring(1);
-                        }
+                    }
+                    else if (resultLineNP.contains("\t") && !commaBool) {
+                        tabHelper();
 
                         for (String splitResultLine : resultLineNP.split("\t")) {
                             splitResultLine = splitResultLine.strip();
                             if ((!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w")&& !splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && !splitResultLine.contains(school)) || (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w")&& !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && !splitResultLine.contains(school))) {
                                 //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
 
-                                if (splitResultLine.contains("ND")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("ND");
-                                    schoolAthleteCount += 1;
-                                    continue;
+                                boolean quickCheck = false;
 
+                                for(String i : KeyWords){
+                                    if(splitResultLine.contains(i)){
+                                        schoolAthleteCount -= 1;
+                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
+                                        schoolAthleteCount += 1;
+                                        quickCheck = true;
+                                    }
                                 }
-
-                                if (splitResultLine.contains("FOUL")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("FOUL");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNS")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNS");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("NH")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("NH");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DNF")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DNF");
-                                    schoolAthleteCount += 1;
-                                    continue;
-                                }
-                                if (splitResultLine.contains("DQ")) {
-                                    schoolAthleteCount -= 1;
-                                    schoolAthletes.get(schoolAthleteCount).setTime("DQ");
-                                    schoolAthleteCount += 1;
+                                if(quickCheck){
                                     continue;
                                 }
 
 
                                 schoolAthletes.add(new Athlete(splitResultLine, commaBool));
                                 schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
+                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
                                 schoolAthleteCount += 1;
 
 
@@ -484,11 +355,40 @@ public class TrackProgram extends JFrame {
 
     }
 
+    private void tabHelper() {
+        if ("\t".equals(String.valueOf(resultLineNP.charAt(0)))) {
+            resultLineNP = resultLineNP.substring(1);
+        }
+    }
+
+    private void PatternChecker(String resultLine) {
+        if(resultLine.matches("^(\\W+?|\\d+?)?.*")){
+            Pattern pattern = Pattern.compile("([a-zA-Z]).*");
+            Matcher matcher = pattern.matcher(resultLine);
+            if(matcher.find()) {
+                String toBeCut = matcher.group(1);
+                resultLineNP = resultLine.substring(resultLine.indexOf(toBeCut));
+            }
+
+
+        }
+    }
+
+    private String[] stripResultFromBodyText() {
+        if(results.text().contains("\r")){
+            return results.text().split("\r"); //splits the doc into full lines
+        } else {
+            return results.text().split("\n"); //splits the doc into full lines
+        }
+    }
+
     private boolean SchoolListCheck() {
         return results.text().contains(school);
     }
 
 
-
+    public int getHashMapArrayListSize() {
+        return hashMapArrayList.size();
+    }
 
 }
