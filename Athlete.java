@@ -1,16 +1,6 @@
 public class Athlete {
-    private String name;
-    private String[] events;
-
-    private String fieldEventVar;
-
-    private String time;
-
-    private String event;
-    private String[] timeArray;
-    private String resultLine;
-
-
+    private String name,fieldEventVar,time,event,resultLine;
+    private String[] events,timeArray;
 
     public Athlete(String rawName, String[] Ev, String Time, Boolean reverseChoice){
         name = rawName;
@@ -124,16 +114,16 @@ Need to account for space infront of name for formatting
     public String toString(){
 
         if(time == null){
-            return name + " FIELD EVENT "+ fieldEventVar;
+            return name + "\t" + " FIELD EVENT "+ "\t"+fieldEventVar+ "\n";
         }
         if(timeArray == null){
-            return name + " TIME "+ time;
+            return name + "\t"+ " TIME "+ "\t" + time+ "\n";
         }
         if(timeArray.length > 1){
-            return name + " TIMES "+ getTimeArrayValue(0) + " " +getTimeArrayValue(1) ;
+            return name+ "\t" + " TIMES " + "\t" + getTimeArrayValue(0) + " " +getTimeArrayValue(1) + "\n"  ;
         }
         else
-            return name + " TIME "+ time;
+            return name + "\t" + " TIME " + "\t" + time+ "\n";
 
     }
 

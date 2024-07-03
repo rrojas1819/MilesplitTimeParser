@@ -19,18 +19,19 @@ public class testEnviroment {
 
 
  */
-        String resultLine = "  M Rahway HS            4:50.00    4:50.64  20";
+        String resultLine = "https://ny.milesplit.com/meets/371240-coach-glynn-holiday-carnival-2020/results/683003?type=raw";
+        //https://nj\.milesplit\.com/meets/505896-sjtca-winter-meet-14-2023/results/874245\?type=raw
 
-        if(resultLine.matches("^(\\W+?|\\d+?)?.*")){
+        Pattern p = Pattern.compile("(^((https://?([a-z]{0,2}))|[a-z]{0,2})\\.)??milesplit.*type=raw");
+        Matcher m = p.matcher(resultLine);
+        System.out.println(m.matches());
 
-            Pattern pattern = Pattern.compile("([a-zA-Z]).*");
-            Matcher matcher = pattern.matcher(resultLine);  //<-- First Letter Found
+        if(m.matches()){
 
-            if(matcher.find()) {
-
-                String newstring = resultLine.substring(resultLine.indexOf(matcher.group(1)));
-
-            }
+            System.out.println(m.group(1));
+            System.out.println(m.group(2));
+            System.out.println(m.group(4));
+            System.out.println(m.group());
 
 
 
