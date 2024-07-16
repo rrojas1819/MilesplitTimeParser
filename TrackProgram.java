@@ -109,7 +109,10 @@ public class TrackProgram extends JFrame {
         return false;
     }
 
-    public void timeStrip() {
+
+
+
+    private void timeStrip() {
 
         for(Athlete ath : schoolAthletes){
             int timeCounter = 0;
@@ -192,7 +195,7 @@ public class TrackProgram extends JFrame {
             tempString = tempString + a;
             tempvar += 1;
         }
-
+        //System.out.println(tempString);
         StringSelection stringSelection = new StringSelection(tempString);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
@@ -353,6 +356,8 @@ public class TrackProgram extends JFrame {
 
         }
 
+
+        timeStrip();
     }
 
     private void tabHelper() {

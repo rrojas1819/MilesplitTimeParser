@@ -3,9 +3,15 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 //execl sheet and make a file directory ffor the execl sheet
 //Create a map to store all the names and athletes and such to access in the future
@@ -101,11 +107,12 @@ public class InputField extends JFrame {
             if (e.getStateChange() == ItemEvent.SELECTED ) {
                 if(program.getHashMapArrayListSize() > 0) {
                     textArea.setText("");
-                    int num = Integer.valueOf(e.getItem().toString().substring(11));
+                    int num = Integer.parseInt(e.getItem().toString().substring(11));
                     num--;
                     program.getHashMapArrayList().get(num).forEach((key, value) -> {
                         //System.out.println("Key=" + key + ", Value=" + value);
-                        textArea.append(key + " " +value);
+                        //use string or collectorbox
+                        textArea.append(value.toString());
 
                     });
                 }
@@ -162,7 +169,6 @@ public class InputField extends JFrame {
                             }
                             if (!checkFail && TrackProgram.returnSpecificState(m.group(4))) {
                                 program.startNameStrip();
-                                program.timeStrip();
                                 notification.setForeground(Color.BLACK);
                                 notification.setText("Data Copied, to paste use (CTRL V)!");
                                 submissionDrop.addItem("Submission " + submissionCount);
@@ -259,5 +265,43 @@ public class InputField extends JFrame {
 
     public String toString(){
         return null;
+    }
+    class CSVWriter{
+        //baeldung https://www.baeldung.com/java-csv#:~:text=In%20this%20quick%20tutorial%2C%20we,and%20how%20to%20handle%20them.
+        /***
+         * I have two choices I can either integreate this in a way where it organizes the names and times from what I have parsed
+         *
+         * Another choice is to completely revamp the parsing formula to work for everything. Which is honestly better in the long run and also allows for group usage via patterns and matchers
+         */// Should just revamp everything atp
+        private java.util.List<String[]> dataLines = new ArrayList<>();
+        public CSVWriter(List<String[]> dataLines){
+            this.dataLines = dataLines;
+        }
+        public void givenDataArray_whenConvertToCSV_thenOutputCreated() throws IOException {
+            File csvOutputFile = new File("./Submissions/Submission.csv"); //Need the submissions to either be numbered or collected from the meet name
+            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+                dataLines.stream()
+                        .map(this::convertToCSV)
+                        .forEach(pw::println);
+            }
+        }
+        private String convertToCSV(String[] data) {
+
+            return Stream.of(data)
+                    .map(this::escapeSpecialCharacters)
+                    .collect(Collectors.joining(","));
+        }
+        //Considering everything is cleaned up prior, this function virtually does nothing most of the time but that's okay.
+        private String escapeSpecialCharacters(String data) {
+            if (data == null) {
+                throw new IllegalArgumentException("Input data cannot be null");
+            }
+            String escapedData = data.replaceAll("\\R", " ");
+            if (data.contains(",") || data.contains("\"") || data.contains("'")) {
+                data = data.replace("\"", "\"\"");
+                escapedData = "\"" + data + "\"";
+            }
+            return escapedData;
+        }
     }
 }
