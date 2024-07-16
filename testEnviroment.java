@@ -14,7 +14,7 @@ public class testEnviroment {
 
 
         String school = "Rahway";
-        Document doc = Jsoup.connect("https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw").get();
+        Document doc = Jsoup.connect("https://nj.milesplit.com/meets/467245-rahway-rising-stars-invitational-1-2022/results/800004").get();
         Element meetResultsBody = doc.getElementById("meetResultsBody");
         Elements results = meetResultsBody.getElementsByTag("pre");
         String fullResults = results.text();
@@ -25,8 +25,8 @@ public class testEnviroment {
 
         //Test case 1:  https://nj.milesplit.com/meets/452060-the-varsity-classic-2023/results/873324?type=raw                                             PASSED              initial (by commas)
         //Test case 2:  https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw       PASSED           \t
-        //Test case 3:  https://nj.milesplit.com/meets/511411-njsiaa-sectional-championships-north-2-group-2and3-2023/results/873249?type=raw                          No commas
-        //Test case 4:  https://nj.milesplit.com/meets/467245-rahway-rising-stars-invitational-1-2022/results/800004                                                   Empty space for teams
+        //Test case 3:  https://nj.milesplit.com/meets/511411-njsiaa-sectional-championships-north-2-group-2and3-2023/results/873249?type=raw              PASSED            No commas
+        //Test case 4:  https://nj.milesplit.com/meets/467245-rahway-rising-stars-invitational-1-2022/results/800004                                       PASSED            Empty space for teams
         //Test case 5:  https://nj.milesplit.com/meets/530391-magee-memorial-class-meet-2023/results/963795?type=raw                                               worked
         //Test case 6:  https://ny.milesplit.com/meets/371240-coach-glynn-holiday-carnival-2020/results/683003?type=raw                                    PASSED        2 pres
         //Test case 7:  https://nj.milesplit.com/meets/420556-blue-devil-classic-2021/results/740378?type=raw                                                       "char"
@@ -69,8 +69,8 @@ public class testEnviroment {
 
        // -- Vertil, Davin 11 Rahway HS ND 3                                                                                                     //(\s+\d+[.]\d+\s+)? error maybe >?                                              \\35-08.00q
         // 40 Kori Dudley Rahway HS 18:02.91                                                                                                                                    \\ \\d+?:\d+?[.]?\d+?
-        Pattern p2 = Pattern.compile("\\s*?(\\d+|--)\\s+([a-zA-Z-']+),?\\s+([a-zA-Z-']+)\\s+(\\d+?\\s+)?" + school + "\\s+(([a-zA-Z-']+)\\s+)?" +
-                "(ND|\\d+[.]\\d+q?|\\d+?:\\d+?[.]+?\\d+?|\\d+-\\d+[.]+?\\d+q?)+" +
+        Pattern p2 = Pattern.compile("\\s*?(\\d+|--)\\s+([a-zA-Z-']+),?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))?\\s+(\\d+?\\s+)?" + school + "\\s+(([a-zA-Z-']+)\\s+)?" +
+                "(ND|\\d+[.]\\d+q?|\\d+?:\\d+?[.]+?\\d+?|\\d+-\\d+([.]+?\\d+q?)?)+" +
                 "[ \\t\\x0B\\f\\r]*(\\d+[.]+?\\d+|\\d+)?\\s*(\\d+[.]\\d+)?\\s*");
         //Matcher m = p.matcher(d);
         Matcher m2 = p2.matcher(fullResults);
