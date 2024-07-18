@@ -14,10 +14,10 @@ public class testEnviroment {
 
 
         String school = "Rahway";
-        Document doc = Jsoup.connect("https://nj.milesplit.com/meets/467245-rahway-rising-stars-invitational-1-2022/results/800004").get();
+        Document doc = Jsoup.connect("https://nj.milesplit.com/meets/543091-union-county-jv-championship-2023/results/928511?type=raw").get();
         Element meetResultsBody = doc.getElementById("meetResultsBody");
         Elements results = meetResultsBody.getElementsByTag("pre");
-        String fullResults = results.text();
+        String fullResults = results.first().text();
 
 
 
@@ -27,12 +27,12 @@ public class testEnviroment {
         //Test case 2:  https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw       PASSED           \t
         //Test case 3:  https://nj.milesplit.com/meets/511411-njsiaa-sectional-championships-north-2-group-2and3-2023/results/873249?type=raw              PASSED            No commas
         //Test case 4:  https://nj.milesplit.com/meets/467245-rahway-rising-stars-invitational-1-2022/results/800004                                       PASSED            Empty space for teams
-        //Test case 5:  https://nj.milesplit.com/meets/530391-magee-memorial-class-meet-2023/results/963795?type=raw                                               worked
-        //Test case 6:  https://ny.milesplit.com/meets/371240-coach-glynn-holiday-carnival-2020/results/683003?type=raw                                    PASSED        2 pres
-        //Test case 7:  https://nj.milesplit.com/meets/420556-blue-devil-classic-2021/results/740378?type=raw                                                       "char"
-        //Test case 8:  https://nj.milesplit.com/meets/483051-union-county-championship-relays-2023/results/924436?type=raw                                          %
-        //Test case 9:  https://nj.milesplit.com/meets/509578-garden-state-showcase-2-2022/results                                                                  Single character
-        //Test case 10: https://nj.milesplit.com/meets/543091-union-county-jv-championship-2023/results/928511?type=raw                                              -----WE GOOD-----(so far)
+        //Test case 5:  https://nj.milesplit.com/meets/530391-magee-memorial-class-meet-2023/results/963795?type=raw                                       PASSED        worked
+        //Test case 6:  https://ny.milesplit.com/meets/371240-coach-glynn-holiday-carnival-2020/results/683003?type=raw                                    PASSED        ""
+        //Test case 7:  https://nj.milesplit.com/meets/420556-blue-devil-classic-2021/results/740378?type=raw                                              PASSED        2 pres, (failing because it is not reading the intial first time)
+        //Test case 8:  https://nj.milesplit.com/meets/483051-union-county-championship-relays-2023/results/924436?type=raw                                CHECK          %
+        //Test case 9:  https://nj.milesplit.com/meets/509578-garden-state-showcase-2-2022/results                                                         PASSED         Single character
+        //Test case 10: https://nj.milesplit.com/meets/543091-union-county-jv-championship-2023/results/928511?type=raw                                    CHECK          -----WE GOOD-----(so far)
         //Test case 11: https://pa.milesplit.com/meets/538832-new-balance-nationals-outdoor-2023/results/946068?type=raw                                              "Was reading relay names"
         //Test case 12: https://nj.milesplit.com/meets/548750-union-county-conference-championships-2023/results/933203?type=raw
         //Test case 13: https://nj.milesplit.com/meets/505896-sjtca-winter-meet-14-2023/results/874245?type=raw
@@ -47,6 +47,7 @@ public class testEnviroment {
         //Test case 22: https://nj.milesplit.com/meets/335142-mid-winter-classic-2019/results/624531?type=raw
         //Test case 23: https://nj.milesplit.com/meets/334342-lavino-relays-2019/results/624323?type=raw
         //Test case 24: https://nj.milesplit.com/meets/412104-westfield-vs-rahway-2021/results/722112?type=raw
+        //Test case 25: https://nj.milesplit.com/meets/616841-union-county-championship-relays-2024/results/1044911?type=raw                               FAILED
 
 
         //System.out.println(fullResults);
@@ -68,10 +69,16 @@ public class testEnviroment {
 
 
        // -- Vertil, Davin 11 Rahway HS ND 3                                                                                                     //(\s+\d+[.]\d+\s+)? error maybe >?                                              \\35-08.00q
-        // 40 Kori Dudley Rahway HS 18:02.91                                                                                                                                    \\ \\d+?:\d+?[.]?\d+?
-        Pattern p2 = Pattern.compile("\\s*?(\\d+|--)\\s+([a-zA-Z-']+),?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))?\\s+(\\d+?\\s+)?" + school + "\\s+(([a-zA-Z-']+)\\s+)?" +
-                "(ND|\\d+[.]\\d+q?|\\d+?:\\d+?[.]+?\\d+?|\\d+-\\d+([.]+?\\d+q?)?)+" +
-                "[ \\t\\x0B\\f\\r]*(\\d+[.]+?\\d+|\\d+)?\\s*(\\d+[.]\\d+)?\\s*");
+        // 40 Kori Dudley Rahway HS 18:02.91                                                                                                                           \\ \\d+?:\d+?[.]?\d+?
+
+        /***
+         * Patter.compile(number or dash before name) (name1)(,) (name2) (name3?) (school name) (school name 2) (first time or seed or event) (second time or seed or event or place)
+         *  54 Larbi, Sherylane W 15 Rahway, NJ 20:10.67 4
+         */
+        Pattern p2 = Pattern.compile("\\s*?(\\d+|--)\\s+([a-zA-Z-']+),?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))?\\s+(\\d+?\\s+)?" + school + "\\s*(([a-zA-Z-']+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)?" +
+                "(ND|\\d+[.]\\d+q?|\\d+?:\\d+?[.]+?(\\d+)?|\\d+-\\d+([.]+?\\d+q?)?)+" +
+                "[ \\t\\x0B\\f\\r]*(\\d+[.]+?\\d+|\\d+[ \\t\\x0B\\f\\r]*|\\d+?:\\d+?[.]+?(\\d+)?|\\d+-\\d+([.]+?\\d+q?)?)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+|\\d+)?[ \\t\\x0B\\f\\r]*");
+
         //Matcher m = p.matcher(d);
         Matcher m2 = p2.matcher(fullResults);
 
