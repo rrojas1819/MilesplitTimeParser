@@ -4,14 +4,21 @@ import org.jsoup.nodes.Element;
 import org.jsoup.    select.Elements;
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Array;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Clipboard;
-
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 class runTrackProgram {
@@ -62,7 +69,14 @@ class runTrackProgram {
 
 
 public class TrackProgram extends JFrame {
-    private String school,resultLineNP;
+    /***
+     * Group 4 is comma
+     * Group 15 is second time event
+     * Group 6 is one or more names
+     * Group 3 is the first time
+     *
+     ***/
+    private String school,FullResults;
     private Document doc;
     private Element meetResultsBody;
     private Elements results;
@@ -70,11 +84,17 @@ public class TrackProgram extends JFrame {
     private static ArrayList<HashMap<String,Athlete>> hashMapArrayList = new ArrayList<>();
     private ArrayList<Athlete> schoolAthletes;
     //countSchool is for testing purposes, no real application.
-    private boolean commaBool;
-    private static final String[]  KeyWords = {"ND", "DNF", "FOUL","NH", "DNS" , "DQ"}, states = {"AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"};
-    public boolean test;
+    private Pattern pat;
+    private Matcher match;
+    private static final String[] states = {"AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"};
+    public boolean IsEmpty = false;
+    private CSVWriter Writer;
 
-
+    /***
+     * Constructor function for TrackProgram, sets up JavaSoup as well as the match and pattern regex and lastly creates the ArrayList for athletes
+     * @param input InputField Class Object
+     * @throws IOException
+     */
     public TrackProgram(InputField input) throws IOException  {
 
         school = input.getSchoolName();
@@ -82,10 +102,11 @@ public class TrackProgram extends JFrame {
         meetResultsBody = doc.getElementById("meetResultsBody");
         results = meetResultsBody.getElementsByTag("pre");
         schoolAthletes = new ArrayList<>();
-        commaBool = input.getBoolComma();
-        if(results.size() > 1) {
-            results = new Elements(results.last());
-        }
+        FullResults = results.first().text();
+        pat = Pattern.compile("\\s*?(\\d+|--)\\s+(#\\s+\\d+\\s+)?(\\s*[a-zA-Z-']+\\s*)+(,)?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))*?\\s+(\\d+?\\s+)?" + school + "\\s*(([a-zA-Z-'()]+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)*?" +
+                "(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
+                "[ \\t\\x0B\\f\\r]*(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
+        match = pat.matcher(FullResults);
 
 
     }
@@ -97,7 +118,11 @@ public class TrackProgram extends JFrame {
     }
 
 
-
+    /***
+     * Checks if the string address given actually exists, IE checks if the state is real
+     * @param address String, specifically is the string of the abbreviated state IE. "NJ","NY","NC"
+     * @return boolean
+     */
     public static boolean returnSpecificState(String address){
         address = address.toUpperCase();
         for(String s : states ){
@@ -111,289 +136,197 @@ public class TrackProgram extends JFrame {
 
 
 
+    /***
+     * <p>0 is if no comma exists and the group 15 and group 6 are null</p>
+     * <p>1 is if no comma exists and the group 15 is null and group 6 is not null</p>
+     * <p>2 is if no comma exists and the group 15 is not null and group 6 is null</p>
+     * <p>3 is if no comma exists and the group 15 is not null and group 6 is not null</p>
+     * <p>4 is if comma exists and the group 15 and group 6 are null</p>
+     * <p>5 is if comma exists and the group 15 is null and group 6 is not null</p>
+     * <p>6 is if comma exists and the group 15 is not null and group 6 is null</p>
+     * <p>7 is if comma exists and the group 15 is not null and group 6 is not null</p>
+     * @return int,
+     */
+    private int switchCheck(){
+        if(match.group(4) == null){
+            if(match.group(15) == null && match.group(6) == null) {
+                return 0;
+            }
+            else if(match.group(15) == null && match.group(6) != null) {
+                    return 1;
+            }
+            else if(match.group(15) != null && match.group(6) == null) {
+                return 2;
+            }
+            else if(match.group(15) != null && match.group(6) != null) {
+                return 3;
+            }
 
-    private void timeStrip() {
+        }
+        else if(match.group(4) != null){
+            if(match.group(15) == null && match.group(6) == null) {
+                return 4;
+            }
+            else if(match.group(15) == null && match.group(6) != null) {
+                return 5;
+            }
+            else if(match.group(15) != null && match.group(6) == null) {
+                return 6;
+            }
+            else if(match.group(15) != null && match.group(6) != null) {
+                return 7;
+            }
 
-        for(Athlete ath : schoolAthletes){
-            int timeCounter = 0;
-            if (ath.getResultLine().contains("  ")) {
+        }
+        return -1;
+    }
+
+    /***
+     *
+     */
+    public void Parse() {
+        int schoolAthleteCount = 0;
+        while (!match.hitEnd()) {
+            if (match.find()) {
+                IsEmpty = false;
+                switch(switchCheck()){
+                    case 0:
+                        schoolAthletes.add(new Athlete(match.group(3) +" "+ match.group(5),match.group(12)));
+                        break;
+                    case 1:
+                        schoolAthletes.add(new Athlete(match.group(3)+" " + match.group(5) + match.group(6), match.group(12)));
+                        break;
+                    case 2:
+                        schoolAthletes.add(new Athlete(match.group(3)+" " + match.group(5), match.group(15)));
+                        break;
+                    case 3:
+                        schoolAthletes.add(new Athlete(match.group(3)+" " + match.group(5)+ match.group(6), match.group(15)));
+                        break;
+                    case 4:
+                        schoolAthletes.add(new Athlete(match.group(5)+" " + match.group(3),match.group(12)));
+                        break;
+                    case 5:
+                        schoolAthletes.add(new Athlete(match.group(5)+ match.group(6)+" " + match.group(3), match.group(12)));
+                        break;
+                    case 6:
+                        schoolAthletes.add(new Athlete(match.group(5)+" " + match.group(3),match.group(15)));
+                        break;
+                    case 7:
+                        schoolAthletes.add(new Athlete(match.group(5) +match.group(6)+" " + match.group(3),match.group(15)));
+                        break;
+                    default:
+                        System.out.println("Failed");
+                        break;
 
 
-                for (String splitResultLine : ath.getResultLine().split("  ")) {
-                    splitResultLine = splitResultLine.strip();
-                    if (!splitResultLine.contains("%") && (splitResultLine.contains(".") && !splitResultLine.contains("'") && !splitResultLine.contains("Jr") && splitResultLine.matches(".*\\d.*")  ||  !splitResultLine.contains("%") && splitResultLine.contains(":") && !splitResultLine.contains("'") && !splitResultLine.contains("Jr") && splitResultLine.matches(".*\\d.*")) ||  !splitResultLine.contains("%") && (splitResultLine.contains("-") && !splitResultLine.contains("'") && !splitResultLine.contains("Jr") && splitResultLine.matches(".*\\d.*"))) {
-
-
-                        if (timeCounter == 0) {
-
-                                if (ath.getTime() == "ND" || ath.getTime() == "FOUL") {
-                                    continue;
-                                }
-
-
-                                ath.setTime(splitResultLine);
-                                timeCounter += 1;
-
-
-
-                        } else if (timeCounter > 0) {
-
-                            ath.setTimeArray(splitResultLine);
-
-                        }
-
-
-                    }
                 }
-            } else if (ath.getResultLine().contains("\t")) {
-                for (String splitResultLine : ath.getResultLine().split("\t")) {
-                    splitResultLine = splitResultLine.strip();
-                    if (!splitResultLine.contains("%") && (splitResultLine.contains(".") && !ath.getResultLine().contains("'") && !splitResultLine.contains("Jr") && splitResultLine.matches(".*\\d.*") ||   !splitResultLine.contains("%") && splitResultLine.contains(":") && !ath.getResultLine().contains("'") && !splitResultLine.contains("Jr") && splitResultLine.matches(".*\\d.*")) || !splitResultLine.contains("%") && (splitResultLine.contains("-") && !ath.getResultLine().contains("'") && !splitResultLine.contains("Jr") && splitResultLine.matches(".*\\d.*"))) {
+                schoolAthletes.get(schoolAthleteCount).setResultLine(match.group());
+                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
+                schoolAthleteCount += 1;
 
-
-                        if (timeCounter == 0) {
-
-                                if (ath.getTime() == "ND" || ath.getTime() == "FOUL") {
-                                    continue;
-                                }
-
-
-                                ath.setTime(splitResultLine);
-                                timeCounter += 1;
-
-
-
-
-                        } else if (timeCounter > 0) {
-
-                            ath.setTimeArray(splitResultLine);
-
-
-
-                        }
-
-
-                    }
-                }
 
             }
 
         }
-
-
-
+        if(schoolAthleteCount == 0){
+            IsEmpty = true;
+            return;
+        }
         int tempvar = 0;
-        String tempString = "";
+        StringBuilder tempString = new StringBuilder();
         for (Athlete a : schoolAthletes) {
             try {
                 a.checkTimeVar();
+                a.selfCheck();
             } catch (NullPointerException e) {
+                System.out.println("Error with" +e);
                 continue;
             }
 
 
-            tempString = tempString + a;
+            tempString.append(a);
             tempvar += 1;
         }
-        //System.out.println(tempString);
-        StringSelection stringSelection = new StringSelection(tempString);
+        System.out.println(tempString);
+        StringSelection stringSelection = new StringSelection(tempString.toString());
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
-
-
-
         hashMapArrayList.add(athleteMap);
-
-        //System.out.println(hashMapArrayList.size());
-        //queue.add(athleteMap);
-        //JLabel atheteString = new JLabel(tempString);
-
-
-    }
-
-
-    public void startNameStrip() {
-        String[] result_Stripped = stripResultFromBodyText();
-        int schoolAthleteCount = 0;
-
-        if (SchoolListCheck()) { //Checks if the school is in the doc
-            for (String resultLine : result_Stripped) {  //checks each line in the array of school lines
-                if (resultLine.contains(school)) {
-                    //countSchoolInstance += 1;
-                    PatternChecker(resultLine);
-
-                    if (resultLineNP.contains("  ") && commaBool) {
-                        for (String splitResultLine : resultLineNP.split("  ")) {
-                            splitResultLine = splitResultLine.strip();
-                            boolean state = (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && !splitResultLine.contains(school)) || (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") && !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && !splitResultLine.contains(school));
-                            if (state && resultLine.contains(",")) {
-                                //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
-                                boolean quickCheck = false;
-
-                                for(String i : KeyWords){
-                                    if(splitResultLine.contains(i)){
-                                        schoolAthleteCount -= 1;
-                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
-                                        schoolAthleteCount += 1;
-                                        quickCheck = true;
-                                    }
-                                }
-                                if(quickCheck){
-                                    continue;
-                                }
-
-
-                                schoolAthletes.add(new Athlete(splitResultLine, commaBool));
-                                schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
-                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
-                                schoolAthleteCount += 1;
-
-                                continue;
-                            }
-                            if (state) {
-                                //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
-                                boolean quickCheck = false;
-
-                                for(String i : KeyWords){
-                                    if(splitResultLine.contains(i)){
-                                        schoolAthleteCount -= 1;
-                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
-                                        schoolAthleteCount += 1;
-                                        quickCheck = true;
-                                    }
-                                }
-                                if(quickCheck){
-                                    continue;
-                                }
-
-
-                                schoolAthletes.add(new Athlete(splitResultLine, commaBool));
-                                schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
-                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
-                                schoolAthleteCount += 1;
-
-
-                            }
-
-                        }
-                    }
-                    else if (resultLineNP.contains("\t") && commaBool) {
-                        tabHelper();
-
-                        for (String splitResultLine : resultLineNP.split("\t")) {
-                            splitResultLine = splitResultLine.strip();
-                            if ((!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w") &&!splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && resultLine.contains(",") && !splitResultLine.contains(school)) || ( !splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w")&& !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && resultLine.contains(",") && !splitResultLine.contains(school))) {
-                                //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
-
-                                boolean quickCheck = false;
-
-                                for(String i : KeyWords){
-                                    if(splitResultLine.contains(i)){
-                                        schoolAthleteCount -= 1;
-                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
-                                        schoolAthleteCount += 1;
-                                        quickCheck = true;
-                                    }
-                                }
-                                if(quickCheck){
-                                    continue;
-                                }
-
-
-
-                                schoolAthletes.add(new Athlete(splitResultLine, true));
-                                schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
-                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
-                                schoolAthleteCount += 1;
-
-
-                            }
-
-
-                        }
-
-
-                    }
-                    else if (resultLineNP.contains("\t") && !commaBool) {
-                        tabHelper();
-
-                        for (String splitResultLine : resultLineNP.split("\t")) {
-                            splitResultLine = splitResultLine.strip();
-                            if ((!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w")&& !splitResultLine.matches(".*\\d.*") && !splitResultLine.contains(".") && !splitResultLine.isEmpty() && !splitResultLine.contains(school)) || (!splitResultLine.matches("'\\w'") && !splitResultLine.matches("\\w")&& !splitResultLine.matches(".*\\d.*") && splitResultLine.contains("Jr") && !splitResultLine.isEmpty() && !splitResultLine.contains(school))) {
-                                //Checks if it's the name line (if so it continues) (Specifically checks if the line contains numbers)
-
-                                boolean quickCheck = false;
-
-                                for(String i : KeyWords){
-                                    if(splitResultLine.contains(i)){
-                                        schoolAthleteCount -= 1;
-                                        schoolAthletes.get(schoolAthleteCount).setTime(i);
-                                        schoolAthleteCount += 1;
-                                        quickCheck = true;
-                                    }
-                                }
-                                if(quickCheck){
-                                    continue;
-                                }
-
-
-                                schoolAthletes.add(new Athlete(splitResultLine, commaBool));
-                                schoolAthletes.get(schoolAthleteCount).setResultLine(resultLineNP);
-                                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
-                                schoolAthleteCount += 1;
-
-
-                            }
-
-
-                        }
-
-
-                    }
-                }
-
-            }
-
+        try {
+            CSVWrite(1);
+        }catch(IOException a){
+           System.out.println(a);
         }
 
-
-        timeStrip();
     }
 
-    private void tabHelper() {
-        if ("\t".equals(String.valueOf(resultLineNP.charAt(0)))) {
-            resultLineNP = resultLineNP.substring(1);
-        }
-    }
-
-    private void PatternChecker(String resultLine) {
-        if(resultLine.matches("^(\\W+?|\\d+?)?.*")){
-            Pattern pattern = Pattern.compile("([a-zA-Z]).*");
-            Matcher matcher = pattern.matcher(resultLine);
-            if(matcher.find()) {
-                String toBeCut = matcher.group(1);
-                resultLineNP = resultLine.substring(resultLine.indexOf(toBeCut));
-            }
-
-
-        }
-    }
-
-    private String[] stripResultFromBodyText() {
-        if(results.text().contains("\r")){
-            return results.text().split("\r"); //splits the doc into full lines
-        } else {
-            return results.text().split("\n"); //splits the doc into full lines
-        }
-    }
-
-    private boolean SchoolListCheck() {
-        return results.text().contains(school);
-    }
 
 
     public int getHashMapArrayListSize() {
         return hashMapArrayList.size();
+    }
+
+    public boolean IsEmpty() {
+        return IsEmpty;
+    }
+
+    public void CSVWrite(int submissionCount) throws IOException {
+        Writer = new CSVWriter(hashMapArrayList.get(submissionCount-1));
+        Writer.setSubmissionCount(submissionCount-1);
+        Writer.givenDataArray_whenConvertToCSV_thenOutputCreated();
+    }
+
+
+    class CSVWriter{
+        //baeldung https://www.baeldung.com/java-csv#:~:text=In%20this%20quick%20tutorial%2C%20we,and%20how%20to%20handle%20them.
+        /***
+         * I have two choices I can either integreate this in a way where it organizes the names and times from what I have parsed
+         *
+         * Another choice is to completely revamp the parsing formula to work for everything. Which is honestly better in the long run and also allows for group usage via patterns and matchers
+         */// Should just revamp everything atp
+        private HashMap<String,Athlete> athleteDataMap;
+        private Stream<Map.Entry<String, Athlete>> stream;
+        private int submissionCount;
+        public CSVWriter(HashMap<String,Athlete> athleteDataMap){
+            this.athleteDataMap = athleteDataMap;
+            stream = athleteMap.entrySet().stream();
+
+        }
+
+        public void setSubmissionCount(int submissionCount) {
+            this.submissionCount = submissionCount;
+        }
+
+        public void givenDataArray_whenConvertToCSV_thenOutputCreated() throws IOException {
+            Path pathToFile = Paths.get("./Submissions/Submission" + submissionCount+ ".csv");
+            Files.createDirectories(pathToFile.getParent());
+            Files.createFile(pathToFile);
+            File csvOutputFile = new File(String.valueOf(pathToFile));//Need the submissions to either be numbered or collected from the meet name
+
+            try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+                stream.map(this::convertToCSV)
+                        .forEach(pw::println);
+            }
+        }
+        private String convertToCSV(Map.Entry<String, Athlete> data) {
+
+            return Stream.of(data)
+                    .map(this::escapeSpecialCharacters)
+                    .collect(Collectors.joining(","));
+        }
+        //Considering everything is cleaned up prior, this function virtually does nothing most of the time but that's okay.
+        private String escapeSpecialCharacters(Map.Entry<String, Athlete> data1) {
+            if (data1 == null) {
+                throw new IllegalArgumentException("Input data cannot be null");
+            }
+            String data = data1.toString();
+            String escapedData = data.replaceAll("\\R", " ");
+            if (data.contains(",") || data.contains("\"") || data.contains("'")) {
+                data = data.replace("\"", "\"\"");
+                escapedData = "\"" + data + "\"";
+            }
+            return escapedData;
+        }
     }
 
 }

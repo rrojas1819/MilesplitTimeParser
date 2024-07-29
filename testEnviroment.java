@@ -13,8 +13,8 @@ public class testEnviroment {
     public static void main(String[] args) throws IOException {
 
 
-        String school = "Plainfield";
-        Document doc = Jsoup.connect("https://nj.milesplit.com/meets/616841-union-county-championship-relays-2024/results/1044911?type=raw").get();
+        String school = "Rahway";
+        Document doc = Jsoup.connect("https://ny.milesplit.com/meets/371240-coach-glynn-holiday-carnival-2020/results/683003?type=raw").get();
         Element meetResultsBody = doc.getElementById("meetResultsBody");
         Elements results = meetResultsBody.getElementsByTag("pre");
         String fullResults = results.first().text();
@@ -63,29 +63,22 @@ public class testEnviroment {
          *
          *   (^\\d+)?.*((\\w*)(,)?(\\w*)).*(^\\d+)?.*(" +school +")"
          */
-        //String d = "1 Jones, Dallas              9 Rahway HS              6.89q  5";
-        //String d2 =  "  4 Vincent, Destin            9 Rahway HS                10.36    4 Vincent, Destin            9 Rahway HS                10.36  ";
-        //Pattern p = Pattern.compile("\\s*?(\\d+|--)\\s+([a-zA-Z-']+),?\\s+([a-zA-Z-']+)\\s+(\\d+?\\s+)?" + "Rahway" +"\\s+([a-zA-Z-']+)\\s+(ND|\\d+[.]\\d+q?|\\d+?:\\d+?[.]?\\d+?|\\d+-\\d+[.]\\d+q?\\s+?\\d+?)\\s*?(\\d+[.]\\d+\\s+?|\\d+)?");
 
-
-       // -- Vertil, Davin 11 Rahway HS ND 3                                                                                                     //(\s+\d+[.]\d+\s+)? error maybe >?                                              \\35-08.00q
-        // 40 Kori Dudley Rahway HS 18:02.91                                                                                                                           \\ \\d+?:\d+?[.]?\d+?
 
         /***
          * Patter.compile(number or dash before name) (name1)(,) (name2) (name3?) (school name) (school name 2) (first time or seed or event) (second time or seed or event or place)
-         *
+         * 6 Matthews, Davon 9 Rahway HS 7.42q 11
          */
         Pattern p2 = Pattern.compile("\\s*?(\\d+|--)\\s+(#\\s+\\d+\\s+)?(\\s*[a-zA-Z-']+\\s*)+(,)?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))*?\\s+(\\d+?\\s+)?" + school + "\\s*(([a-zA-Z-'()]+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)*?" +
                 "(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
                 "[ \\t\\x0B\\f\\r]*(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
 
-        //Matcher m = p.matcher(d);
+
         Matcher m2 = p2.matcher(fullResults);
 
-        // 14 Simpson, Rolando 10 Rahway HS 23.20 2 23.198
-        // 15 Wilson, Cody 12 Rahway HS 23.23 4
 
-        //System.out.println(m.matches());
+
+        //System.out.println(m2.matches());
         //System.out.println(m.group(0));
         int count = 0;
 

@@ -1,3 +1,6 @@
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class Athlete {
     private String name,fieldEventVar,time,event,resultLine;
     private String[] events,timeArray;
@@ -25,6 +28,13 @@ public class Athlete {
         }
     }
 
+    public Athlete(String name) {
+        this.name =name;
+    }
+    public Athlete(String name, String time) {
+        this.name =name;
+        this.time = time;
+    }
 
 
     public void reverseName(){
@@ -58,7 +68,28 @@ Need to account for space infront of name for formatting
 
     }
 
+    public void selfCheck(){
+        Pattern pat = Pattern.compile("\\s*?(\\d+|--)\\s+(#\\s+\\d+\\s+)?(\\s*[a-zA-Z-']+\\s*)+(,)?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))*?\\s+(\\d+?\\s+)?" +"[a-zA-Z-'()]+" +"\\s*(([a-zA-Z-'()]+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)*?" +
+                "(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
+                "[ \\t\\x0B\\f\\r]*(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
+        Matcher match = pat.matcher(resultLine);
+        System.out.println(resultLine);
 
+        if(match.find()){
+            Pattern temp = Pattern.compile("\\d{1,3}[.'-]??");
+            if(match.group(15) == null){
+                return;
+            }
+            Matcher tempMatch = temp.matcher(match.group(15));
+            if(tempMatch.find()){
+                this.time = match.group(12);
+                checkTimeVar();
+            }
+
+        }
+
+
+    }
 
     public String getName(){
         return name;
