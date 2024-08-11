@@ -1,9 +1,11 @@
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Athlete {
     private String name,fieldEventVar,time,event,resultLine;
     private String[] events,timeArray;
+    private ArrayList<String> timeArrayList = new ArrayList<>() , eventArrayList = new ArrayList<>();
 
     public Athlete(String rawName, String[] Ev, String Time, Boolean reverseChoice){
         name = rawName;
@@ -73,7 +75,7 @@ Need to account for space infront of name for formatting
                 "(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
                 "[ \\t\\x0B\\f\\r]*(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
         Matcher match = pat.matcher(resultLine);
-        System.out.println(resultLine);
+        //System.out.println(resultLine);
 
         if(match.find()){
             Pattern temp = Pattern.compile("\\d{1,3}[.'-]??");
@@ -83,7 +85,6 @@ Need to account for space infront of name for formatting
             Matcher tempMatch = temp.matcher(match.group(15));
             if(tempMatch.find()){
                 this.time = match.group(12);
-                checkTimeVar();
             }
 
         }
@@ -96,22 +97,24 @@ Need to account for space infront of name for formatting
     }
     public void checkTimeVar(){
         time = time.strip();
+        checkTimeVarHelper(time);
+    }
 
+    private void checkTimeVarHelper(String time) {
         if(time.contains("-")){
             fieldEventVar = time;
-            time = null;
+            this.time = null;
 
             String[] tempFieldEventVar = fieldEventVar.split(" ");
             fieldEventVar = tempFieldEventVar[0];
-
+            eventArrayList.add(fieldEventVar);
         } else if (time.contains(":") && !time.contains("-")|| time.contains(".") && !time.contains("-")) {
             String[] tempTime = time.split(" ");
             time = tempTime[0];
+            timeArrayList.add(time);
         }
-
-
-
     }
+
     public String getTimeArrayValue(int value){
         return timeArray[value];
     }
@@ -144,21 +147,45 @@ Need to account for space infront of name for formatting
     }
     public String toString(){
 
-        if(time == null){
-            return name + "\t" + " FIELD EVENT "+ "\t"+fieldEventVar+ "\n";
-        }
-        if(timeArray == null){
-            return name + "\t"+ " TIME "+ "\t" + time+ "\n";
-        }
+        /*
         if(timeArray.length > 1){
             return name+ "\t" + " TIMES " + "\t" + getTimeArrayValue(0) + " " +getTimeArrayValue(1) + "\n"  ;
         }
+
+         */
+        if(!eventArrayList.isEmpty()){
+            StringBuilder tempString = new StringBuilder();
+            tempString.append(name).append("\t").append("FIELD_EVENT").append("\t").append(eventArrayList.get(0)).append("\n");
+
+            for(int i = 1 ; eventArrayList.size() >i;i++){
+                tempString.append(name).append("\t").append("FIELD_EVENT").append("\t").append(eventArrayList.get(i)).append("\n");
+            }
+
+            return tempString.toString();
+        }
+        if(!timeArrayList.isEmpty()){
+            StringBuilder tempString = new StringBuilder();
+            tempString.append(name).append("\t").append("TIMES").append("\t").append(timeArrayList.get(0)).append("\n");
+            for(int i = 1 ; timeArrayList.size() >i;i++){
+                tempString.append(name).append("\t").append("TIMES").append("\t").append(timeArrayList.get(i)).append("\n");
+            }
+            return tempString.toString();
+        }
         else
-            return name + "\t" + " TIME " + "\t" + time+ "\n";
+            return name + "\t" + "TIME" + "\t" + time+ "\n";
 
     }
 
 
+    public void copySelf(Athlete selfAthlete) throws Exception {
+        if(!selfAthlete.getName().equals(name)){
+            throw new Exception("Not the same name");
+        }
+        checkTimeVarHelper(selfAthlete.getTime());
+        
+
+
+    }
 }
 
 

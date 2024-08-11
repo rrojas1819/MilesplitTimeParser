@@ -184,8 +184,9 @@ public class InputField extends JFrame {
 
                         }
                         else{
+                            notification.setForeground(Color.RED);
                             notification.setText("Address didn't work!");
-                            notification.setBackground(Color.RED);
+
                         }
 
                     }

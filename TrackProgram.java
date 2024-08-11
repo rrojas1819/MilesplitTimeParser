@@ -221,10 +221,26 @@ public class TrackProgram extends JFrame {
 
                 }
                 schoolAthletes.get(schoolAthleteCount).setResultLine(match.group());
-                athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(),schoolAthletes.get(schoolAthleteCount));
+                schoolAthletes.get(schoolAthleteCount).selfCheck();
+                schoolAthletes.get(schoolAthleteCount).checkTimeVar();
+                //schoolAthletes.get(schoolAthleteCount) is the current Athlete object (B)
+                //athleteMap.containsKey(schoolAthletes.get(schoolAthleteCount).getName()) (A)
+                if(athleteMap.containsKey(schoolAthletes.get(schoolAthleteCount).getName())){
+                    //if the name is in the athlete map this will trigger
+                    try {
+                        athleteMap.get(schoolAthletes.get(schoolAthleteCount).getName()).copySelf(schoolAthletes.get(schoolAthleteCount));
+                    }
+                    catch(Exception caught){
+                        System.out.println(caught);
+                    }
+
+                    //athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(), schoolAthletes.get(schoolAthleteCount));
+
+                }else {
+                    athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(), schoolAthletes.get(schoolAthleteCount));
+
+                }
                 schoolAthleteCount += 1;
-
-
             }
 
         }
@@ -234,19 +250,13 @@ public class TrackProgram extends JFrame {
         }
         int tempvar = 0;
         StringBuilder tempString = new StringBuilder();
-        for (Athlete a : schoolAthletes) {
-            try {
-                a.checkTimeVar();
-                a.selfCheck();
-            } catch (NullPointerException e) {
-                System.out.println("Error with" +e);
-                continue;
-            }
 
-
-            tempString.append(a);
+        for (Map.Entry<String, Athlete> set : athleteMap.entrySet()) {
+            tempString.append(set.getValue());
             tempvar += 1;
+
         }
+
         System.out.println(tempString);
         StringSelection stringSelection = new StringSelection(tempString.toString());
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -285,11 +295,11 @@ public class TrackProgram extends JFrame {
          * Another choice is to completely revamp the parsing formula to work for everything. Which is honestly better in the long run and also allows for group usage via patterns and matchers
          */// Should just revamp everything atp
         private HashMap<String,Athlete> athleteDataMap;
-        private Stream<Map.Entry<String, Athlete>> stream;
+        private Stream<Athlete> stream;
         private int submissionCount;
         public CSVWriter(HashMap<String,Athlete> athleteDataMap){
             this.athleteDataMap = athleteDataMap;
-            stream = athleteMap.entrySet().stream();
+            stream = athleteMap.values().stream();
 
         }
 
@@ -308,24 +318,25 @@ public class TrackProgram extends JFrame {
                         .forEach(pw::println);
             }
         }
-        private String convertToCSV(Map.Entry<String, Athlete> data) {
+        private String convertToCSV(Athlete data) {
 
             return Stream.of(data)
                     .map(this::escapeSpecialCharacters)
                     .collect(Collectors.joining(","));
         }
-        //Considering everything is cleaned up prior, this function virtually does nothing most of the time but that's okay.
-        private String escapeSpecialCharacters(Map.Entry<String, Athlete> data1) {
+        //Fix this with a format
+        private String escapeSpecialCharacters(Athlete data1) {
             if (data1 == null) {
                 throw new IllegalArgumentException("Input data cannot be null");
             }
             String data = data1.toString();
-            String escapedData = data.replaceAll("\\R", " ");
+            String escapedData = data.replaceAll("[ \\t\\x0B\\f]",",");
             if (data.contains(",") || data.contains("\"") || data.contains("'")) {
                 data = data.replace("\"", "\"\"");
                 escapedData = "\"" + data + "\"";
             }
-            return escapedData;
+
+            return escapedData.substring(0,escapedData.length()-1);//-1 to remove the final \n from the athlete object to string return
         }
     }
 
