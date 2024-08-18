@@ -20,9 +20,14 @@ import java.awt.datatransfer.Clipboard;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
+/***
+ *
+ * 1.) Need to auto create an error log that creates and reads and records the errors
+ * 2.) set up GUI to accept permission to actually write into directories and also set up text files on not allowed to
+ */
 class runTrackProgram {
-    public static void main(String[] args) throws IOException {
+
+    public static void main(String[] args) {
         new InputField();
 
 
@@ -33,6 +38,7 @@ class runTrackProgram {
 
 
     }
+
     //"https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw","Rahway", false\
 
 //Test case 1:  https://nj.milesplit.com/meets/452060-the-varsity-classic-2023/results/873324?type=raw                                                Passed        initial (by commas)
@@ -68,15 +74,15 @@ class runTrackProgram {
 }
 
 
-public class TrackProgram extends JFrame {
+public class TrackProgram {
     /***
      * Group 4 is comma
      * Group 15 is second time event
      * Group 6 is one or more names
-     * Group 3 is the first time
+     * Group 3 is the first name
      *
      ***/
-    private String school,FullResults;
+    private String school,FullResults,fullMeetName,address;
     private Document doc;
     private Element meetResultsBody;
     private Elements results;
@@ -87,8 +93,9 @@ public class TrackProgram extends JFrame {
     private Pattern pat;
     private Matcher match;
     private static final String[] states = {"AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA", "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD", "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH", "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY"};
-    public boolean IsEmpty = false;
+    private boolean IsEmpty = false;
     private CSVWriter Writer;
+    private static int submissionC = 0;
 
     /***
      * Constructor function for TrackProgram, sets up JavaSoup as well as the match and pattern regex and lastly creates the ArrayList for athletes
@@ -99,13 +106,22 @@ public class TrackProgram extends JFrame {
 
         school = input.getSchoolName();
         doc = Jsoup.connect(input.getAddress()).get();
+        address = input.getAddress();
         meetResultsBody = doc.getElementById("meetResultsBody");
+        Element subheader = doc.getElementById("subheader");
+        Elements meetName = subheader.getElementsByClass("meetName");
+
+        fullMeetName = meetName.first().text();
+        fullMeetName = fullMeetName.replace(" ","_");
+
+
+
         results = meetResultsBody.getElementsByTag("pre");
         schoolAthletes = new ArrayList<>();
         FullResults = results.first().text();
-        pat = Pattern.compile("\\s*?(\\d+|--)\\s+(#\\s+\\d+\\s+)?(\\s*[a-zA-Z-']+\\s*)+(,)?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))*?\\s+(\\d+?\\s+)?" + school + "\\s*(([a-zA-Z-'()]+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)*?" +
-                "(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
-                "[ \\t\\x0B\\f\\r]*(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
+        pat = Pattern.compile("\\s*?(\\d+|--)\\s+(#\\s+\\d+\\s+)?(\\s*[a-zA-Z-'\"]+\\s*)+(,)?\\s+([a-zA-Z-'\"]+)(\\s+([a-zA-Z-'\"]+))*?\\s+(\\d+?\\s+)?" + school + "\\s*(([a-zA-Z-'()\"]+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)*?" +
+                "(NT|ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
+                "[ \\t\\x0B\\f\\r]*(NT|ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
         match = pat.matcher(FullResults);
 
 
@@ -163,23 +179,21 @@ public class TrackProgram extends JFrame {
             }
 
         }
-        else if(match.group(4) != null){
-            if(match.group(15) == null && match.group(6) == null) {
+        else {
+            if (match.group(15) == null && match.group(6) == null) {
                 return 4;
-            }
-            else if(match.group(15) == null && match.group(6) != null) {
+            } else if (match.group(15) == null && match.group(6) != null) {
                 return 5;
-            }
-            else if(match.group(15) != null && match.group(6) == null) {
+            } else if (match.group(15) != null && match.group(6) == null) {
                 return 6;
-            }
-            else if(match.group(15) != null && match.group(6) != null) {
+            } else if (match.group(15) != null && match.group(6) != null) {
                 return 7;
             }
 
         }
         return -1;
     }
+
 
     /***
      *
@@ -215,7 +229,7 @@ public class TrackProgram extends JFrame {
                         schoolAthletes.add(new Athlete(match.group(5) +match.group(6)+" " + match.group(3),match.group(15)));
                         break;
                     default:
-                        System.out.println("Failed");
+                        ErrorLog.writeIntoLog(new MatchNotFoundException(),address,school);
                         break;
 
 
@@ -231,7 +245,7 @@ public class TrackProgram extends JFrame {
                         athleteMap.get(schoolAthletes.get(schoolAthleteCount).getName()).copySelf(schoolAthletes.get(schoolAthleteCount));
                     }
                     catch(Exception caught){
-                        System.out.println(caught);
+                        ErrorLog.writeIntoLog(caught,address,school);
                     }
 
                     //athleteMap.put(schoolAthletes.get(schoolAthleteCount).getName(), schoolAthletes.get(schoolAthleteCount));
@@ -262,10 +276,11 @@ public class TrackProgram extends JFrame {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
         hashMapArrayList.add(athleteMap);
+        submissionC++;
         try {
-            CSVWrite(1);
+            CSVWrite(submissionC);
         }catch(IOException a){
-           System.out.println(a);
+            ErrorLog.writeIntoLog(a,address,school);
         }
 
     }
@@ -286,6 +301,15 @@ public class TrackProgram extends JFrame {
         Writer.givenDataArray_whenConvertToCSV_thenOutputCreated();
     }
 
+    class MatchNotFoundException extends Exception{
+        public MatchNotFoundException(){
+            super("Match group was not found in the switchCase Function");
+        }
+        public MatchNotFoundException(String s) {
+            super(s);
+        }
+
+    }
 
     class CSVWriter{
         //baeldung https://www.baeldung.com/java-csv#:~:text=In%20this%20quick%20tutorial%2C%20we,and%20how%20to%20handle%20them.
@@ -303,15 +327,26 @@ public class TrackProgram extends JFrame {
 
         }
 
+
         public void setSubmissionCount(int submissionCount) {
             this.submissionCount = submissionCount;
         }
 
         public void givenDataArray_whenConvertToCSV_thenOutputCreated() throws IOException {
-            Path pathToFile = Paths.get("./Submissions/Submission" + submissionCount+ ".csv");
+            Path pathToFile = Paths.get("./Submissions/"+school+"/"+fullMeetName+".csv");
+            File csvOutputFile = new File(String.valueOf(pathToFile));
+            while(csvOutputFile.exists() && !csvOutputFile.isDirectory()){
+                //Need the submissions to either be numbered or collected from the meet name
+                //Need to see if I can speed this up. --> Naming it would speed up the process significantly
+                submissionCount++;
+                pathToFile = Paths.get("./Submissions/"+school+"/"+fullMeetName+"_"+submissionCount+".csv"); //Submission count is a temporary fix
+                csvOutputFile = new File(String.valueOf(pathToFile));
+            }
             Files.createDirectories(pathToFile.getParent());
             Files.createFile(pathToFile);
-            File csvOutputFile = new File(String.valueOf(pathToFile));//Need the submissions to either be numbered or collected from the meet name
+
+
+
 
             try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
                 stream.map(this::convertToCSV)

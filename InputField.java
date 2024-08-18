@@ -10,14 +10,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-//execl sheet and make a file directory ffor the execl sheet
-//Create a map to store all the names and athletes and such to access in the future
-//Store these Map objects in stack and a Queue
+
 public class InputField extends JFrame {
 
     private JTextField URL,schoolName;
     private String name, address = null;
-    private JButton checker,clearButton; //Checks for correct input from text fields.
+    private JButton submit,clearButton; //Checks for correct input from text fields.
     private JLabel notification,URLLabel,schoolLabel,subLabel;
     private JPanel inputPanel,urlPanel,schoolPanel,checkPanel,buttonBox,subPanel;
     private boolean checkFail = false;
@@ -27,7 +25,21 @@ public class InputField extends JFrame {
 
     private TrackProgram program;
 
-    public InputField() throws IOException {
+    /***
+     * Checks if the permisssions.txt is set to true when the program first starts.
+     * @return
+     */
+    public boolean checkPermissions(){
+        return true;
+    }
+    /***
+     * Creates the GUI and directory for the permissions.txt
+     * @return
+     */
+    public void createPermissions(){
+
+    }
+    public InputField() {
         this.setTitle("Milesplit Parser");;
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(1100,375);
@@ -43,12 +55,12 @@ public class InputField extends JFrame {
         buttonBox = new JPanel(new GridBagLayout());
         URL = new JTextField(20);
         schoolName = new JTextField(20);
-        checker = new JButton("Submit");
+        submit = new JButton("Submit");
         clearButton = new JButton("Clear");
-        checker.setFocusable(false);
+        submit.setFocusable(false);
         clearButton.setFocusable(false);
         buttonBox.add(clearButton);
-        buttonBox.add(checker);
+        buttonBox.add(submit);
         inputPanel = new JPanel(new GridBagLayout());
         urlPanel = new JPanel();
         schoolPanel = new JPanel();
@@ -97,12 +109,7 @@ public class InputField extends JFrame {
         this.setVisible(true);
 
 
-        /***
-         *
-         * THE HASHMAP IS DELETING DUPLICATES :D
-         *
-         *
-         */
+
         submissionDrop.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED ) {
                 if(program.getHashMapArrayListSize() > 0) {
@@ -125,7 +132,7 @@ public class InputField extends JFrame {
     }
 
     private void buttonPrompts() {
-        checker.addActionListener(e -> {
+        submit.addActionListener(e -> {
                     if(URL.getText().isEmpty() && schoolName.getText().isEmpty()){
                         URL.requestFocus();
                         notification.setText("Please fill in your data!");
@@ -143,7 +150,7 @@ public class InputField extends JFrame {
                         notification.setForeground(Color.RED);
                     }
                     else {
-                        //Need some validation here as well as checking correct input to some degree.
+
 
 
                         name = schoolName.getText();
@@ -158,15 +165,19 @@ public class InputField extends JFrame {
 
 
                         if (m.matches()) {
-
+                            checkFail = false;
 
                             try {
                                 program = new TrackProgram(this);
+                                System.out.println("Freezing here 2");
 
                             }catch (IOException | IllegalArgumentException | NullPointerException ill) {
                                 notification.setForeground(Color.RED);
                                 notification.setText("Error with Address!");
                                 checkFail = true;
+                            }
+                            catch(Exception anythingElse){
+                                ErrorLog.writeIntoLog(anythingElse,address,name);
                             }
                             if (!checkFail && TrackProgram.returnSpecificState(m.group(4))) {
                                 program.Parse();
@@ -201,7 +212,7 @@ public class InputField extends JFrame {
             notification.setText("Please input your Data!");
         });
 
-        checker.addMouseListener(new MouseListener() {
+        submit.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
 
@@ -219,13 +230,13 @@ public class InputField extends JFrame {
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                checker.setBackground(Color.gray);
+                submit.setBackground(Color.gray);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
 
-                checker.setBackground((new JButton()).getBackground());
+                submit.setBackground((new JButton()).getBackground());
             }
         });
         clearButton.addMouseListener(new MouseListener() {

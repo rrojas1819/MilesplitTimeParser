@@ -15,10 +15,10 @@ public class testEnviroment {
 
         String school = "Rahway";
         Document doc = Jsoup.connect("https://ny.milesplit.com/meets/371240-coach-glynn-holiday-carnival-2020/results/683003?type=raw").get();
-        Element meetResultsBody = doc.getElementById("meetResultsBody");
-        Elements results = meetResultsBody.getElementsByTag("pre");
+        Element meetResultsBody = doc.getElementById("subheader");
+        Elements results = meetResultsBody.getElementsByClass("meetName");
         String fullResults = results.first().text();
-
+        System.out.println(fullResults);
 
 
 
@@ -48,76 +48,6 @@ public class testEnviroment {
         //Test case 23: https://nj.milesplit.com/meets/334342-lavino-relays-2019/results/624323?type=raw                                                   PASSED.
         //Test case 24: https://nj.milesplit.com/meets/412104-westfield-vs-rahway-2021/results/722112?type=raw                                             PASSED
         //Test case 25: https://nj.milesplit.com/meets/616841-union-county-championship-relays-2024/results/1044911?type=raw                               PASSED.
-
-
-        //System.out.println(fullResults);
-        /***
-         *   1 Jones, Dallas              9 Piscataway T              6.89q  5
-         *   2 Addison, Nasir             9 North Star A              7.06q  7
-         *   3 Powell, Xavion             9 North Star A              7.21q 11
-         *   4 Wright, Irijah             9 North Star A              7.27q  8
-         *   5 Wason Taylor, Khalil       9 Piscataway T              7.28q  9
-         *
-         *
-         *   (^((https://?([a-z]{0,2}))|[a-z]{0,2})\.)??milesplit.*type=raw
-         *
-         *   (^\\d+)?.*((\\w*)(,)?(\\w*)).*(^\\d+)?.*(" +school +")"
-         */
-
-
-        /***
-         * Patter.compile(number or dash before name) (name1)(,) (name2) (name3?) (school name) (school name 2) (first time or seed or event) (second time or seed or event or place)
-         * 6 Matthews, Davon 9 Rahway HS 7.42q 11
-         */
-        Pattern p2 = Pattern.compile("\\s*?(\\d+|--)\\s+(#\\s+\\d+\\s+)?(\\s*[a-zA-Z-']+\\s*)+(,)?\\s+([a-zA-Z-']+)(\\s+([a-zA-Z-']+))*?\\s+(\\d+?\\s+)?" + school + "\\s*(([a-zA-Z-'()]+)\\s+)?(,?\\s+[a-zA-Z]+\\s+?)*?" +
-                "(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]\\d+q?m?|\\d+?:\\d+?([.]+?\\d+)?|J?\\d+-\\d+([.]+?\\d+q?)?)+" +
-                "[ \\t\\x0B\\f\\r]*(ND|NH|DNF|FOUL|DNS|DQ|\\d+[.]+?\\d+m?|\\d+?:\\d+?[.]+?(\\d+)?|J?\\d+-\\d+([.]+?\\d+q?m?)?|\\d+)?[ \\t\\x0B\\f\\r]*(\\d+[.]\\d+m?|\\d+)?[ \\t\\x0B\\f\\r]*");
-
-
-        Matcher m2 = p2.matcher(fullResults);
-
-
-
-        //System.out.println(m2.matches());
-        //System.out.println(m.group(0));
-        int count = 0;
-
-        while(!m2.hitEnd()){
-
-           if(m2.find() && m2.group(4) != null){
-               count++;
-               //System.out.println("Current Count: " + count + " " + m2.group());
-               //group 6 being != null implies 3 names || == null implies
-               //group 15 being != null implies 2 times and therefore use the second time || == null implies use group 12 to get the first time/event
-
-
-
-               if(m2.group(6) != null && m2.group(15)!= null){
-                   System.out.println("Current Count: " + count + " " + m2.group(5) +m2.group(6) + " " +m2.group(3)+ " "+ m2.group(15) ); //NAMES
-               }
-               if(m2.group(6) != null && m2.group(15) == null){
-                   System.out.println("Current Count: " + count + " " + m2.group(5) +m2.group(6) + " " +m2.group(3)+ " "+ m2.group(12) ); //NAMES
-               }
-               if(m2.group(6) == null && m2.group(15) == null){
-                   System.out.println("Current Count: " + count + " " + m2.group(5) + " " +m2.group(3)+ " "+ m2.group(12) ); //NAMES
-               }
-               if(m2.group(6) == null && m2.group(15) != null){
-                   System.out.println("Current Count: " + count + " " + m2.group(5) + " " +m2.group(3)+ " "+ m2.group(15) ); //NAMES
-               }
-
-           }
-           else if (m2.find()){
-                count++;
-                System.out.println("Current Count: " + count + " " + m2.group(5) + " " +m2.group(3) + " "+ m2.group(15) ); //NAMES
-                //Events
-
-            }
-        }
-
-
-
-
-
 
 
 
