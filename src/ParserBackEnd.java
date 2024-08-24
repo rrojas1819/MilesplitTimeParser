@@ -1,18 +1,18 @@
+
+
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.    select.Elements;
-import javax.swing.*;
+
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.awt.datatransfer.StringSelection;
@@ -28,15 +28,7 @@ import java.util.stream.Stream;
 class runTrackProgram {
 
     public static void main(String[] args) {
-        new InputField();
-
-
-
-
-
-
-
-
+        new GUI();
     }
 
     //"https://nj.milesplit.com/meets/548099-trials-of-miles-xc-opening-night-presented-by-new-balance-2023/results/955421?type=raw","Rahway", false\
@@ -73,8 +65,10 @@ class runTrackProgram {
 //Test case 30:
 }
 
-
-public class TrackProgram {
+/***
+ * Not a true Back End as it is dependent to start from the GUI
+ */
+public class ParserBackEnd {
     /***
      * Group 4 is comma
      * Group 15 is second time event
@@ -98,11 +92,11 @@ public class TrackProgram {
     private static int submissionC = 0;
 
     /***
-     * Constructor function for TrackProgram, sets up JavaSoup as well as the match and pattern regex and lastly creates the ArrayList for athletes
+     * Constructor function for src.TrackProgram, sets up JavaSoup as well as the match and pattern regex and lastly creates the ArrayList for athletes
      * @param input InputField Class Object
      * @throws IOException
      */
-    public TrackProgram(InputField input) throws IOException  {
+    public ParserBackEnd(GUI input) throws IOException  {
 
         school = input.getSchoolName();
         doc = Jsoup.connect(input.getAddress()).get();
@@ -301,15 +295,7 @@ public class TrackProgram {
         Writer.givenDataArray_whenConvertToCSV_thenOutputCreated();
     }
 
-    class MatchNotFoundException extends Exception{
-        public MatchNotFoundException(){
-            super("Match group was not found in the switchCase Function");
-        }
-        public MatchNotFoundException(String s) {
-            super(s);
-        }
 
-    }
 
     class CSVWriter{
         //baeldung https://www.baeldung.com/java-csv#:~:text=In%20this%20quick%20tutorial%2C%20we,and%20how%20to%20handle%20them.

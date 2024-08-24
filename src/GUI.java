@@ -1,17 +1,19 @@
+
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 
-import java.io.IOException;
+import java.io.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
 
-public class InputField extends JFrame {
+public class GUI extends JFrame {
 
     private JTextField URL,schoolName;
     private String name, address = null;
@@ -22,24 +24,25 @@ public class InputField extends JFrame {
     private JComboBox submissionDrop;
     private int submissionCount = 1;
     private JTextArea textArea;
-
-    private TrackProgram program;
+    private ParserBackEnd program;
 
     /***
      * Checks if the permisssions.txt is set to true when the program first starts.
      * @return
      */
-    public boolean checkPermissions(){
-        return true;
-    }
+
     /***
      * Creates the GUI and directory for the permissions.txt
      * @return
      */
-    public void createPermissions(){
 
-    }
-    public InputField() {
+    public GUI() {
+        PermissionMenu popUp = new PermissionMenu(this);
+        boolean quickCheck = false;
+        if(popUp.returnStatus()){
+            popUp.dispose();
+            quickCheck = true;
+        }
         this.setTitle("Milesplit Parser");;
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(1100,375);
@@ -106,8 +109,10 @@ public class InputField extends JFrame {
         this.add(inputPanel,c);
         this.add(buttonBox,c);
         this.add(ne, c);
-        this.setVisible(true);
 
+        if(quickCheck){
+            this.setVisible(true);
+        }
 
 
         submissionDrop.addItemListener(e -> {
@@ -168,18 +173,19 @@ public class InputField extends JFrame {
                             checkFail = false;
 
                             try {
-                                program = new TrackProgram(this);
-                                System.out.println("Freezing here 2");
+                                program = new ParserBackEnd(this);
+
 
                             }catch (IOException | IllegalArgumentException | NullPointerException ill) {
                                 notification.setForeground(Color.RED);
-                                notification.setText("Error with Address!");
+                                notification.setText("Error with Address or Name!");
                                 checkFail = true;
+                                ErrorLog.writeIntoLog(ill,address,name);
                             }
                             catch(Exception anythingElse){
                                 ErrorLog.writeIntoLog(anythingElse,address,name);
                             }
-                            if (!checkFail && TrackProgram.returnSpecificState(m.group(4))) {
+                            if (!checkFail && ParserBackEnd.returnSpecificState(m.group(4))) {
                                 program.Parse();
                                 if(program.IsEmpty()) {
                                     notification.setForeground(Color.RED);
@@ -197,7 +203,7 @@ public class InputField extends JFrame {
                         else{
                             notification.setForeground(Color.RED);
                             notification.setText("Address didn't work!");
-
+                            ErrorLog.writeIntoLog(new AddressNotReadingException(),address,name);
                         }
 
                     }
@@ -284,5 +290,154 @@ public class InputField extends JFrame {
     public String toString(){
         return null;
     }
+
+}
+
+/***
+ * Creates a Permission Menu at start up that is inheriting from JFrame, if the checkBox is selected then It never pops up again unless the Permission Menu is changed.(Doing so would likely throw an Exception)
+ */
+class PermissionMenu extends JFrame{
+    //This technically isn't all GUI//
+    private FileWriter fileToWrite;
+    private BufferedWriter bufferedWriter;
+    private BufferedReader bufferedReader;
+    private FileReader fileReader;
+    private Path pathToFile = Paths.get("./Permissions/Permission.txt");
+    private File Permission = new File(String.valueOf(pathToFile));
+    private boolean status = false;
+    private JCheckBox checkBox = new JCheckBox();
+
+
+    public PermissionMenu(JFrame frame){
+        this.setTitle("READ ME");
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setSize(500,390);
+        this.setLayout(new GridBagLayout());
+        Toolkit kit = getToolkit();
+        Dimension size = kit.getScreenSize();
+        this.setLocation(size.width/2 - getWidth()/2, size.height/2 - getHeight()/2);
+        JPanel textPanel = new JPanel(new FlowLayout());
+        textPanel.setPreferredSize(new Dimension(415,250));
+        textPanel.setBackground(Color.lightGray);
+        JLabel label = new JLabel();
+        label.setText("<html><p>BE AWARE ideally 3 main folders will be created, the Permission folder,<br> " +
+                "the Submissions Folder, and the ErrorLog folder<br><br>1. Submission Folder will have the submissions<br><br>2. " +
+                "Permission Folder will have Permission.txt which controls this pop up<br>" +
+                "<br>3. ErrorLog will track errors and the time to log for the developer to fix <br>" +
+                "<br> To EMPHASIZE you will have to email or submit the issues through Github <br>or Google Forms<br>" +
+                "<br>HOWEVER, the ErrorLog folder will only occur if given permission</p></html>");
+        JLabel checkboxLab = new JLabel("Select if you have read: ");
+        textPanel.add(label);
+        JLabel lab = new JLabel("<html><br>The developer cannot access the files! ONLY YOU CAN!</html>");
+        lab.setForeground(Color.RED);
+        textPanel.add(lab);
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.PAGE_START;
+        c.gridx = 0;
+        c.ipady = 20;
+        GridBagConstraints d = new GridBagConstraints();
+        d.anchor = GridBagConstraints.FIRST_LINE_END;
+        d.gridx = 0;
+        d.ipady = 10;
+        this.add(textPanel,c);
+        buttonPrompts(frame,buttonPanel);
+        buttonPanel.add(checkboxLab,d);
+        buttonPanel.add(checkBox,d);
+        this.add(buttonPanel,c);
+        try {
+            if(checkPermission()){
+                status = true;
+            }else{
+                this.setVisible(true);
+            }
+        } catch (IOException e) {
+        }
+    }
+
+
+    public boolean returnStatus(){
+        return status;
+    }
+    private void buttonPrompts(JFrame main, JPanel buttonPanel){
+        JButton submit = new JButton("Continue");
+        submit.setFocusable(false);
+        GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.PAGE_START;
+        c.gridx = 0;
+        buttonPanel.add(submit,c);
+        submit.addActionListener(e ->{
+            try {if(checkBox.isSelected()) {
+                writeTruePermission();
+                main.setVisible(true);
+                this.dispose();
+            }
+            else{
+                main.setVisible(true);
+                this.dispose();
+            }
+            } catch (IOException ex) {
+            }
+        });
+    }
+
+
+    private void writeTruePermission() throws IOException    {
+        if(Permission.exists()){
+            Permission.delete();
+        }
+
+        try {
+            pathToFile = Paths.get("./Permissions/Permission.txt");
+            Permission = new File(String.valueOf(pathToFile));
+            Files.createDirectories(pathToFile.getParent());
+            Files.createFile(pathToFile);
+        } catch (IOException e) {
+        }
+        fileToWrite = new FileWriter(Permission);
+        bufferedWriter = new BufferedWriter(fileToWrite);
+        bufferedWriter.write("true");
+        bufferedWriter.close();
+    }
+
+    private boolean checkPermission() throws IOException {
+        if(Permission.exists() && !Permission.isDirectory()){
+            fileReader = new FileReader(Permission);
+            bufferedReader = new BufferedReader(fileReader);
+            String toRead = bufferedReader.readLine();
+            try {
+                if (toRead.compareTo("false") == 0) {
+                    return false;
+                } else if (toRead.compareTo("true") == 0) {
+                    return true;
+                }
+            }
+            catch(NullPointerException e ){
+                Permission.delete();
+
+                return false;
+            }
+
+       }
+        else{
+            createPermission(pathToFile);
+            fileToWrite = new FileWriter(Permission);
+            bufferedWriter = new BufferedWriter(fileToWrite);
+            writeFalseIntoPermission();
+        }
+         return false;
+    }
+    private void writeFalseIntoPermission() throws IOException {
+        bufferedWriter.write(String.format(("false")));
+        bufferedWriter.close();
+    }
+    private void createPermission(Path pathToFile){
+        try {
+            Files.createDirectories(pathToFile.getParent());
+            Files.createFile(pathToFile);
+        } catch (IOException e) {
+        }
+    }
+
 
 }

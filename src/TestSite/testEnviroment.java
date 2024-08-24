@@ -1,3 +1,5 @@
+package TestSite;
+
 import org.jsoup.*;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -5,9 +7,6 @@ import org.jsoup.select.Elements;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class testEnviroment {
     public static void main(String[] args) throws IOException {

@@ -1,3 +1,4 @@
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -76,4 +77,29 @@ public class ErrorLog {
 
 
     
+}
+class ForcedException extends  Exception{
+    public ForcedException(){
+        super("Forced Exception");
+    }
+    public ForcedException(String s) {
+        super(s);
+    }
+}
+class AddressNotReadingException extends Exception{
+    public AddressNotReadingException(){
+        super("Address isn't reading or doesn't exist");
+    }
+    public AddressNotReadingException(String s) {
+        super(s);
+    }
+}
+class MatchNotFoundException extends Exception{
+    public MatchNotFoundException(){
+        super("Match group was not found in the switchCase Function");
+    }
+    public MatchNotFoundException(String s) {
+        super(s);
+    }
+
 }
