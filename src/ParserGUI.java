@@ -1,5 +1,7 @@
 package src;
 
+import org.openqa.selenium.WebDriver;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.JTextComponent;
@@ -14,7 +16,13 @@ public class ParserGUI {
     private static boolean isDarkMode = false;
     private static String lastUsedUrl = "";
     public static void main(String[] args) {
+        suppressSeleniumCdpWarnings();
         SwingUtilities.invokeLater(() -> buildUI("", "", isDarkMode));
+    }
+
+    private static void suppressSeleniumCdpWarnings() {
+        java.util.logging.Logger.getLogger("org.openqa.selenium.devtools.CdpVersionFinder").setLevel(java.util.logging.Level.SEVERE);
+        java.util.logging.Logger.getLogger("org.openqa.selenium.chromium.ChromiumDriver").setLevel(java.util.logging.Level.SEVERE);
     }
 
     private static void buildUI(String prevUrls, String prevSchool, boolean darkMode) {
@@ -158,27 +166,76 @@ public class ParserGUI {
             outputArea.setText("");
             allResults.clear();
             exportButton.setEnabled(false);
+            parseButton.setEnabled(false);
 
+            SwingUtilities.invokeLater(() -> outputArea.append("Parsing…\n\n"));
+
+            long startMs = System.currentTimeMillis();
             new Thread(() -> {
-                for (String url : urls) {
-                    url = url.trim();
-                    if (url.isEmpty()) continue;
-                    lastUsedUrl = url;
-                    outputArea.append("Results from: " + url + "\n");
-                    outputArea.append("========================================\n");
-                    try {
-                        List<Athlete> athletes = FormattedParserRunner.run(url, school);
-                        for (Athlete a : athletes) {
-                            allResults.add(a);
-                            outputArea.append(a.toString());
+                WebDriver driver = null;
+                try {
+                    driver = CrossPlatformChrome.createHeadlessDriver();
+                    try { Thread.sleep(2000); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                    for (int i = 0; i < urls.length; i++) {
+                        String url = urls[i].trim();
+                        if (url.isEmpty()) continue;
+                        lastUsedUrl = url;
+                        final String currentUrl = url;
+                        SwingUtilities.invokeLater(() -> {
+                            outputArea.append("Results from: " + currentUrl + "\n");
+                            outputArea.append("========================================\n");
+                        });
+                        List<Athlete> athletes = null;
+                        try {
+                            athletes = FormattedParserRunner.runWithDriver(driver, url, school);
+                        } catch (Exception ex) {
+                            writeErrorLog(ex);
+                            boolean browserDead = isBrowserDead(ex);
+                            if (browserDead && driver != null) {
+                                try { driver.quit(); } catch (Exception ignored) {}
+                                try {
+                                    driver = CrossPlatformChrome.createHeadlessDriver();
+                                    athletes = FormattedParserRunner.runWithDriver(driver, url, school);
+                                } catch (Exception ex2) {
+                                    writeErrorLog(ex2);
+                                    SwingUtilities.invokeLater(() -> outputArea.append("Error with URL: " + url + "\n"));
+                                }
+                            } else {
+                                SwingUtilities.invokeLater(() -> outputArea.append("Error with URL: " + url + "\n"));
+                            }
                         }
-                    } catch (Exception ex) {
-                        outputArea.append("Error with URL: " + url + "\n");
-                        writeErrorLog(ex);
+                        if (athletes != null) {
+                            List<Athlete> toAppend = new ArrayList<>(athletes);
+                            SwingUtilities.invokeLater(() -> {
+                                for (Athlete a : toAppend) {
+                                    allResults.add(a);
+                                    outputArea.append(a.toString());
+                                }
+                            });
+                        }
+                        SwingUtilities.invokeLater(() -> outputArea.append("\n\n"));
+                        if (i < urls.length - 1) {
+                            try { Thread.sleep(1200); } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                        }
                     }
-                    outputArea.append("\n\n");
+                } catch (Exception ex) {
+                    writeErrorLog(ex);
+                    SwingUtilities.invokeLater(() -> outputArea.append("Failed to start browser: " + ex.getMessage() + "\n"));
+                } finally {
+                    if (driver != null) {
+                        try {
+                            driver.quit();
+                        } catch (Exception ignored) {}
+                    }
+                    long elapsedMs = System.currentTimeMillis() - startMs;
+                    double elapsedSec = elapsedMs / 1000.0;
+                    String timeMsg = String.format("Parsing completed in %.1f s\n", elapsedSec);
+                    SwingUtilities.invokeLater(() -> {
+                        outputArea.append(timeMsg);
+                        parseButton.setEnabled(true);
+                        if (!allResults.isEmpty()) exportButton.setEnabled(true);
+                    });
                 }
-                if (!allResults.isEmpty()) exportButton.setEnabled(true);
             }).start();
         });
 
@@ -241,6 +298,17 @@ public class ParserGUI {
                 }
             }
         });
+    }
+
+    private static boolean isBrowserDead(Throwable t) {
+        for (Throwable x = t; x != null; x = x.getCause()) {
+            String name = x.getClass().getSimpleName();
+            if (name.contains("UnreachableBrowser") || name.equals("ConnectException") || name.equals("ClosedChannelException"))
+                return true;
+            if (x.getMessage() != null && x.getMessage().contains("remote browser"))
+                return true;
+        }
+        return false;
     }
 
     private static void writeErrorLog(Exception e) {
